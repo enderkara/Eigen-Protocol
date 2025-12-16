@@ -7,9 +7,24 @@ interface InputFormProps {
   setInputB: (val: string) => void;
   onSubmit: () => void;
   loading: boolean;
+  submitLabel?: string;
+  loadingLabel?: string;
+  placeholderA?: string;
+  placeholderB?: string;
 }
 
-const InputForm: React.FC<InputFormProps> = ({ inputA, setInputA, inputB, setInputB, onSubmit, loading }) => {
+const InputForm: React.FC<InputFormProps> = ({ 
+  inputA, 
+  setInputA, 
+  inputB, 
+  setInputB, 
+  onSubmit, 
+  loading,
+  submitLabel = "CONSTRUCT BRIDGE",
+  loadingLabel = "ARCHITECTING...",
+  placeholderA = "Interest/Domain A",
+  placeholderB = "Interest/Domain B"
+}) => {
   return (
     <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto z-10 relative">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -19,7 +34,7 @@ const InputForm: React.FC<InputFormProps> = ({ inputA, setInputA, inputB, setInp
             type="text"
             value={inputA}
             onChange={(e) => setInputA(e.target.value)}
-            placeholder="Domain A (e.g., Mycelium)"
+            placeholder={placeholderA}
             className="relative w-full bg-zinc-900 text-white placeholder-zinc-500 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
             disabled={loading}
           />
@@ -35,7 +50,7 @@ const InputForm: React.FC<InputFormProps> = ({ inputA, setInputA, inputB, setInp
             type="text"
             value={inputB}
             onChange={(e) => setInputB(e.target.value)}
-            placeholder="Domain B (e.g., Urban Planning)"
+            placeholder={placeholderB}
             className="relative w-full bg-zinc-900 text-white placeholder-zinc-500 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-500 font-mono"
             disabled={loading}
           />
@@ -52,7 +67,7 @@ const InputForm: React.FC<InputFormProps> = ({ inputA, setInputA, inputB, setInp
       >
         <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-violet-600 to-indigo-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
         <span className="relative z-10 flex items-center justify-center gap-2">
-           {loading ? "ARCHITECTING..." : "CONSTRUCT BRIDGE"}
+           {loading ? loadingLabel : submitLabel}
         </span>
       </button>
     </div>

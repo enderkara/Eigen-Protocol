@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { generateBridge, evaluateFidelity } from './services/geminiService';
-import { EigenResponse, FidelityResponse } from './types';
+import { generateBridge, evaluateFidelity, generateCognitiveAnalysis, generatePolymathProfile } from './services/geminiService';
+import { EigenResponse, FidelityResponse, CognitiveResponse, PolymathResponse } from './types';
 import InputForm from './components/InputForm';
 import BridgeCard from './components/BridgeCard';
 import EigenVisualizer from './components/EigenVisualizer';
 import FidelityCard from './components/FidelityCard';
-import { SAMPLE_INPUTS } from './constants';
-import { BrainCircuit, ShieldCheck, Component } from 'lucide-react';
+import CognitiveCard from './components/CognitiveCard';
+import PolymathCard from './components/PolymathCard';
+import { SAMPLE_INPUTS, SAMPLE_PORTFOLIOS } from './constants';
+import { BrainCircuit, ShieldCheck, Brain, Users } from 'lucide-react';
 
-type AppMode = 'ARCHITECT' | 'GATEKEEPER';
+type AppMode = 'ARCHITECT' | 'GATEKEEPER' | 'COGNITIVE' | 'PROFILER';
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<AppMode>('ARCHITECT');
@@ -18,11 +20,18 @@ const App: React.FC = () => {
   const [inputB, setInputB] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EigenResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
+  
   // Gatekeeper State
   const [signalInput, setSignalInput] = useState("");
   const [fidelityResult, setFidelityResult] = useState<FidelityResponse | null>(null);
+
+  // Cognitive State
+  const [cognitiveResult, setCognitiveResult] = useState<CognitiveResponse | null>(null);
+
+  // Polymath State
+  const [polymathResult, setPolymathResult] = useState<PolymathResponse | null>(null);
+
+  const [error, setError] = useState<string | null>(null);
 
   const handleConstruct = async () => {
     if (!inputA || !inputB) return;
@@ -58,9 +67,50 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCognitiveAnalysis = async () => {
+    if (!inputA || !inputB) return;
+
+    setLoading(true);
+    setError(null);
+    setCognitiveResult(null);
+
+    try {
+      const data = await generateCognitiveAnalysis(inputA, inputB);
+      setCognitiveResult(data);
+    } catch (err: any) {
+      setError(err.message || "Analysis failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePolymathProfile = async () => {
+    if (!inputA || !inputB) return;
+
+    setLoading(true);
+    setError(null);
+    setPolymathResult(null);
+
+    try {
+      const data = await generatePolymathProfile(inputA, inputB);
+      setPolymathResult(data);
+    } catch (err: any) {
+      setError(err.message || "Profiling failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadSample = (a: string, b: string) => {
     setInputA(a);
     setInputB(b);
+  };
+
+  const switchMode = (newMode: AppMode) => {
+    setMode(newMode);
+    setError(null);
+    setLoading(false);
+    // Optional: clear results when switching?
   };
 
   return (
@@ -69,21 +119,34 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-800 bg-[#09090b]/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setMode('ARCHITECT')}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => switchMode('ARCHITECT')}>
             <BrainCircuit className="text-violet-500 w-6 h-6" />
-            <h1 className="font-serif font-bold text-xl tracking-wide text-white">EIGEN PROTOCOL</h1>
+            <h1 className="font-serif font-bold text-xl tracking-wide text-white hidden md:block">EIGEN PROTOCOL</h1>
+            <h1 className="font-serif font-bold text-lg tracking-wide text-white md:hidden">EIGEN</h1>
           </div>
           
-          <div className="flex items-center gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+          <div className="flex items-center gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 overflow-x-auto max-w-[200px] md:max-w-none no-scrollbar">
              <button 
-               onClick={() => setMode('ARCHITECT')}
-               className={`px-4 py-1.5 rounded-md text-xs font-mono transition-all ${mode === 'ARCHITECT' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+               onClick={() => switchMode('ARCHITECT')}
+               className={`px-3 py-1.5 rounded-md text-xs font-mono transition-all whitespace-nowrap ${mode === 'ARCHITECT' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
              >
                ARCHITECT
              </button>
              <button 
-               onClick={() => setMode('GATEKEEPER')}
-               className={`px-4 py-1.5 rounded-md text-xs font-mono transition-all ${mode === 'GATEKEEPER' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+               onClick={() => switchMode('COGNITIVE')}
+               className={`px-3 py-1.5 rounded-md text-xs font-mono transition-all whitespace-nowrap ${mode === 'COGNITIVE' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+             >
+               ANALYST
+             </button>
+             <button 
+               onClick={() => switchMode('PROFILER')}
+               className={`px-3 py-1.5 rounded-md text-xs font-mono transition-all whitespace-nowrap ${mode === 'PROFILER' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+             >
+               PROFILER
+             </button>
+             <button 
+               onClick={() => switchMode('GATEKEEPER')}
+               className={`px-3 py-1.5 rounded-md text-xs font-mono transition-all whitespace-nowrap ${mode === 'GATEKEEPER' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
              >
                GATEKEEPER
              </button>
@@ -94,10 +157,10 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main className="pt-24 pb-12 px-4 max-w-6xl mx-auto space-y-12">
 
-        {mode === 'ARCHITECT' ? (
+        {mode === 'ARCHITECT' && (
           <>
             {!result && !loading && (
-                <div className="text-center space-y-4 max-w-2xl mx-auto py-12">
+                <div className="text-center space-y-4 max-w-2xl mx-auto py-12 animate-fade-in">
                     <h2 className="text-3xl md:text-5xl font-serif text-white leading-tight">
                         Find the Hidden Geometry<br/>Connecting All Things
                     </h2>
@@ -118,7 +181,7 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            <section className="relative">
+            <section className="relative animate-fade-in">
                  <InputForm 
                    inputA={inputA}
                    setInputA={setInputA}
@@ -126,6 +189,8 @@ const App: React.FC = () => {
                    setInputB={setInputB}
                    onSubmit={handleConstruct}
                    loading={loading}
+                   submitLabel="CONSTRUCT BRIDGE"
+                   loadingLabel="ARCHITECTING..."
                  />
             </section>
 
@@ -154,7 +219,115 @@ const App: React.FC = () => {
                 </div>
             )}
           </>
-        ) : (
+        )}
+
+        {mode === 'COGNITIVE' && (
+          <>
+            {!cognitiveResult && !loading && (
+                <div className="text-center space-y-4 max-w-2xl mx-auto py-12 animate-fade-in">
+                    <div className="inline-flex items-center justify-center p-3 rounded-full bg-zinc-900 border border-zinc-800 mb-2">
+                       <Brain className="w-8 h-8 text-cyan-500" />
+                    </div>
+                    <h2 className="text-3xl md:text-5xl font-serif text-white leading-tight">
+                        Cognitive Analyst
+                    </h2>
+                    <p className="text-zinc-400 text-lg font-light">
+                        Discover the shared psychological traits behind two interests. Understand the "User Persona" that bridges them.
+                    </p>
+                </div>
+            )}
+
+            <section className="relative animate-fade-in">
+                 <InputForm 
+                   inputA={inputA}
+                   setInputA={setInputA}
+                   inputB={inputB}
+                   setInputB={setInputB}
+                   onSubmit={handleCognitiveAnalysis}
+                   loading={loading}
+                   submitLabel="ANALYZE PSYCHE"
+                   loadingLabel="ANALYZING..."
+                 />
+            </section>
+
+             <div className="mt-8">
+               {loading && !cognitiveResult && (
+                  <div className="w-full max-w-3xl mx-auto h-64 flex items-center justify-center border border-zinc-800 rounded-xl bg-zinc-900/50">
+                      <div className="flex flex-col items-center gap-3">
+                         <div className="w-2 h-2 rounded-full bg-cyan-500 animate-ping"></div>
+                         <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Mapping Neural Pathways...</span>
+                      </div>
+                  </div>
+               )}
+               {cognitiveResult && !loading && (
+                 <CognitiveCard data={cognitiveResult} />
+               )}
+             </div>
+          </>
+        )}
+
+        {mode === 'PROFILER' && (
+           <>
+            {!polymathResult && !loading && (
+                <div className="text-center space-y-4 max-w-2xl mx-auto py-12 animate-fade-in">
+                    <div className="inline-flex items-center justify-center p-3 rounded-full bg-zinc-900 border border-zinc-800 mb-2">
+                       <Users className="w-8 h-8 text-amber-500" />
+                    </div>
+                    <h2 className="text-3xl md:text-5xl font-serif text-white leading-tight">
+                        Polymath Profiler
+                    </h2>
+                    <p className="text-zinc-400 text-lg font-light">
+                        Enter a portfolio of interests for two users (comma separated). Discover the shared archetype that bonds them.
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-2 mt-4">
+                        {SAMPLE_PORTFOLIOS.map((sample, idx) => (
+                            <button 
+                                key={idx}
+                                onClick={() => loadSample(sample.a, sample.b)}
+                                className="px-3 py-1 bg-zinc-900 border border-zinc-700 hover:border-amber-500 rounded-full text-xs text-zinc-400 transition-colors"
+                            >
+                                Sample {idx + 1}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <section className="relative animate-fade-in">
+                 <InputForm 
+                   inputA={inputA}
+                   setInputA={setInputA}
+                   inputB={inputB}
+                   setInputB={setInputB}
+                   onSubmit={handlePolymathProfile}
+                   loading={loading}
+                   submitLabel="GENERATE PROFILE"
+                   loadingLabel="PROFILING..."
+                   placeholderA="User A Portfolio (e.g. Math, Poetry, Coding)"
+                   placeholderB="User B Portfolio (e.g. History, Music, Design)"
+                 />
+                 <div className="text-center mt-2 text-xs font-mono text-zinc-600">
+                    * Tip: The more diverse the interests, the deeper the insight.
+                 </div>
+            </section>
+
+             <div className="mt-8">
+               {loading && !polymathResult && (
+                  <div className="w-full max-w-3xl mx-auto h-64 flex items-center justify-center border border-zinc-800 rounded-xl bg-zinc-900/50">
+                      <div className="flex flex-col items-center gap-3">
+                         <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></div>
+                         <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Synthesizing Archetypes...</span>
+                      </div>
+                  </div>
+               )}
+               {polymathResult && !loading && (
+                 <PolymathCard data={polymathResult} />
+               )}
+             </div>
+           </>
+        )}
+
+        {mode === 'GATEKEEPER' && (
           <div className="max-w-3xl mx-auto animate-fade-in">
              <div className="text-center mb-12 space-y-4">
                 <div className="inline-flex items-center justify-center p-3 rounded-full bg-zinc-900 border border-zinc-800 mb-4">
@@ -221,7 +394,7 @@ const App: React.FC = () => {
       </main>
 
       <footer className="py-8 text-center text-zinc-600 text-xs font-mono">
-         <p>EIGEN PROTOCOL v2.0 // ARCHITECT & GATEKEEPER</p>
+         <p>EIGEN PROTOCOL v2.2 // ARCHITECT, ANALYST, PROFILER & GATEKEEPER</p>
       </footer>
       
       <style>{`
@@ -234,6 +407,13 @@ const App: React.FC = () => {
         }
         .animate-fade-in {
              animation: fadeIn 0.8s ease-out forwards;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
     </div>
